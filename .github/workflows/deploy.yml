@@ -17,27 +17,37 @@ jobs:
         env:
           SERVICES: s3,lambda,dynamodb
           DEBUG: 1
+        options: >-
+          --health-cmd="curl -f http://localhost:4566/_localstack/health || exit 1"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
 
     steps:
       - name: Checkout backend repo
         uses: actions/checkout@v4
-        with:
-          repository: ragavendran-nyd/test-backend # or same repo
-          path: backend
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      - name: Install dependencies
-        working-directory: backend
+      - name: Build backend Docker image
         run: |
-          pip install -r requirements.txt
+          docker build -t backend-app .
 
-      - name: Run backend server
-        working-directory: backend
+      - name: Run backend container
         run: |
-          uvicorn main:app --host 0.0.0.0 --port 8000 &
-          sleep 10
-          curl http://localhost:8000/docs
+          docker run -d --name backend -p 8000:8000 \
+            --env AWS_ACCESS_KEY_ID=test \
+            --env AWS_SECRET_ACCESS_KEY=test \
+            --env AWS_DEFAULT_REGION=ap-southeast-1 \
+            --env LOCALSTACK_URL=http://localstack:4566 \
+            --network host backend-app
+
+      - name: Wait for backend to be ready
+        run: |
+          echo "Waiting for backend to start..."
+          for i in {1..15}; do
+            if curl -sSf http://localhost:8000/docs > /dev/null; then
+              echo "✅ Backend is up!"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "❌ Backend did not start in time" && exit 1
