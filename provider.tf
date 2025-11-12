@@ -1,19 +1,18 @@
 provider "aws" {
+  region     = "ap-southeast-1"
   access_key = "test"
   secret_key = "test"
-  region     = "ap-southeast-1"
 
-  # Disable all AWS credential + metadata checks
+  s3_use_path_style           = true
   skip_credentials_validation = true
   skip_metadata_api_check     = true
   skip_requesting_account_id  = true
 
-  s3_use_path_style = true
-
   endpoints {
     s3       = "http://localhost.localstack.cloud:4566"
     dynamodb = "http://localhost.localstack.cloud:4566"
-    lambda   = "http://localhost.localstack.cloud:4566"
     iam      = "http://localhost.localstack.cloud:4566"
+    sts      = "http://localhost.localstack.cloud:4566"
+    lambda   = "http://localhost.localstack.cloud:4566"
   }
 }
