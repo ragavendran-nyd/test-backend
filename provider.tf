@@ -1,18 +1,12 @@
 provider "aws" {
-  region     = "ap-southeast-1"
-  access_key = "test"
-  secret_key = "test"
-
-  s3_use_path_style           = true
+  access_key                  = "test"
+  secret_key                  = "test"
+  region                      = "us-east-1"
   skip_credentials_validation = true
-  skip_metadata_api_check     = true
   skip_requesting_account_id  = true
+  s3_use_path_style           = true
 
   endpoints {
-    s3       = "http://localhost.localstack.cloud:4566"
-    dynamodb = "http://localhost.localstack.cloud:4566"
-    iam      = "http://localhost.localstack.cloud:4566"
-    sts      = "http://localhost.localstack.cloud:4566"
-    lambda   = "http://localhost.localstack.cloud:4566"
+    s3 = "http://localhost.localstack.cloud:4566"
   }
 }

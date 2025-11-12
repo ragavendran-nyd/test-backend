@@ -1,25 +1,29 @@
-name: Terraform LocalStack Deploy
+name: Deploy to LocalStack
 
 on:
   push:
-    branches:
-      - willcloud-s3-localstack-test
+    branches: [willcloud-s3-localstack-test]
+  workflow_dispatch:
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
-
     services:
       localstack:
-        image: localstack/localstack
+        image: localstack/localstack:latest
         ports:
           - 4566:4566
+        env:
+          SERVICES: s3
+          DEBUG: 1
         options: >-
-          --env SERVICES=s3,lambda,dynamodb
-          --env DEBUG=1
+          --health-cmd "curl -f http://localhost:4566/_localstack/health || exit 1"
+          --health-interval 10s
+          --health-retries 10
+          --health-timeout 5s
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Terraform
@@ -27,11 +31,8 @@ jobs:
         with:
           terraform_version: 1.9.5
 
-      - name: Init Terraform
+      - name: Initialize Terraform
         run: terraform init
 
-      - name: Plan Terraform
-        run: terraform plan -out=tfplan
-
-      - name: Apply Terraform
-        run: terraform apply -auto-approve tfplan
+      - name: Apply Terraform (simulate AWS infra)
+        run: terraform apply -auto-approve

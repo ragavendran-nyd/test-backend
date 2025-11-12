@@ -1,23 +1,14 @@
 terraform {
   backend "s3" {
-    bucket = "willcloud-devops-bucket-state"
-    key    = "localstack/terraform.tfstate"
-    region = "ap-southeast-1"
-
-    access_key                  = "test"
-    secret_key                  = "test"
+    bucket                      = "terraform-backend-localstack"
+    key                         = "state/terraform.tfstate"
+    region                      = "us-east-1"
     skip_credentials_validation = true
     skip_metadata_api_check     = true
-
+    skip_requesting_account_id  = true
+    force_path_style            = true
     endpoints = {
       s3 = "http://localhost.localstack.cloud:4566"
-    }
-  }
-  required_version = ">=0.13.0"
-  required_providers {
-    aws = {
-      version = ">= 2.7.0"
-      source  = "hashicorp/aws"
     }
   }
 }
