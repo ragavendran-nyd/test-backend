@@ -3,7 +3,7 @@ name: Terraform LocalStack Deploy
 on:
   push:
     branches:
-      - main
+      - willcloud-s3-localstack-test
 
 jobs:
   terraform:
