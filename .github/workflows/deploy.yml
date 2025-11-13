@@ -9,23 +9,21 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    services:
-      localstack:
-        image: localstack/localstack:latest
-        ports:
-          - 4566:4566
-        env:
-          SERVICES: "ec2,iam,s3,sts,cloudwatch,logs"
-          DEBUG: 1
-        options: >-
-          --health-cmd="curl -f http://localhost:4566/health || exit 1"
-          --health-interval=5s
-          --health-timeout=2s
-          --health-retries=20
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Run LocalStack in background
+        run: |
+          docker run -d --name localstack \
+            -p 4566:4566 \
+            -e SERVICES="ec2,iam,s3,sts,cloudwatch,logs" \
+            -e DEBUG=1 \
+            localstack/localstack:latest
+          sleep 15
+
+      - name: Verify LocalStack is running
+        run: curl http://localhost:4566/health
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -38,3 +36,6 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
+
+      - name: Stop LocalStack
+        run: docker stop localstack
