@@ -2,7 +2,7 @@ name: Terraform Deploy with LocalStack
 
 on:
   push:
-    branches: ["main"]
+    branches: ["willcloud-ec2-localstack-test"]
   workflow_dispatch:
 
 jobs:
