@@ -32,6 +32,11 @@ jobs:
           sleep 2
           done
 
+      - name: Generate SSH key for Terraform
+        run: |
+          ssh-keygen -t rsa -b 4096 -f ./id_rsa_localstack -N ""
+          ls -al .
+
       - name: Install Terraform manually
         run: |
           curl -fsSL https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip -o tf.zip

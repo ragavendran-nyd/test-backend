@@ -1,6 +1,6 @@
 resource "aws_key_pair" "dev" {
   key_name   = "localstack-key"
-  public_key = file("~/.ssh/id_rsa_localstack.pub") # point to your public key or generate one in workflow
+  public_key = file("${path.module}/id_rsa_localstack.pub")
 }
 
 resource "aws_vpc" "v" {
