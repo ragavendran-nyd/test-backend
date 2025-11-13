@@ -15,7 +15,7 @@ jobs:
         ports:
           - 4566:4566
         env:
-          SERVICES: ec2,iam,s3
+          SERVICES: "ec2,iam,s3,sts,cloudwatch,logs"
           DEBUG: 1
         options: >-
           --health-cmd="curl -f http://localhost:4566/health || exit 1"
