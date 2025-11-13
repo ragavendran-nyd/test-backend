@@ -13,29 +13,35 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Run LocalStack in background
+      - name: Start LocalStack
         run: |
           docker run -d --name localstack \
             -p 4566:4566 \
             -e SERVICES="ec2,iam,s3,sts,cloudwatch,logs" \
             -e DEBUG=1 \
             localstack/localstack:latest
-          sleep 15
 
-      - name: Verify LocalStack is running
-        run: curl http://localhost:4566/health
+          echo "Waiting for LocalStack..."
+          sleep 20
 
-      - name: Setup Terraform
+      - name: Check LocalStack
+        run: curl http://localhost:4566/_localstack/health
+
+      - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Plan
-        run: terraform plan
-
       - name: Terraform Apply
         run: terraform apply -auto-approve
 
+      - name: Upload Terraform State
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfstate
+          path: terraform.tfstate
+
       - name: Stop LocalStack
+        if: always()
         run: docker stop localstack
