@@ -42,7 +42,7 @@ jobs:
           pip install terraform-local awscli-local
 
       - name: Run Terraform
-        working-directory: ./terraform
+        working-directory: .
         env:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
