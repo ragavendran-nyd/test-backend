@@ -32,26 +32,20 @@ jobs:
           sleep 2
           done
 
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: "1.8.5"
-
-      - name: Remove BOM from Terraform files
+      - name: Install Terraform manually
         run: |
-          find . -name "*.tf" -exec sed -i '1s/^\xEF\xBB\xBF//' {} \;
+          curl -fsSL https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip -o tf.zip
+          unzip tf.zip
+          sudo mv terraform /usr/local/bin/
+          terraform version
 
-      - name: Debug provider.tf bytes
+      - name: Fix Terraform binary for tflocal
         run: |
-          hexdump -C provider.tf | head
+          echo "TERRAFORM_CLI_PATH=/usr/local/bin/terraform" >> $GITHUB_ENV
 
       - name: Install tflocal
         run: |
           pip install terraform-local awscli-local
-
-      - name: Show Terraform files
-        run: |
-          ls -R .
 
       - name: Run Terraform
         working-directory: .
@@ -60,6 +54,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: test
           AWS_DEFAULT_REGION: us-east-1
         run: |
-          tflocal init
-          tflocal plan
-          tflocal apply -auto-approve
+          tflocal init -no-color
+          tflocal plan -no-color
+          tflocal apply -auto-approve -no-color
