@@ -26,7 +26,11 @@ jobs:
 
       - name: Wait for LocalStack
         run: |
-          localstack status --wait
+          echo "Waiting for LocalStack to be ready..."
+          for i in {1..30}; do
+          awslocal sts get-caller-identity && break
+          sleep 2
+          done
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v2
