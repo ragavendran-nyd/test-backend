@@ -41,6 +41,10 @@ jobs:
         run: |
           pip install terraform-local awscli-local
 
+      - name: Show Terraform files
+        run: |
+          ls -R .
+
       - name: Run Terraform
         working-directory: .
         env:
@@ -49,4 +53,5 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
         run: |
           tflocal init
+          tflocal plan
           tflocal apply -auto-approve
