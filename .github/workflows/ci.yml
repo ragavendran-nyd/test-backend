@@ -1,0 +1,48 @@
+name: test-terraform-localstack
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [willcloud-keycloak-ec2-localstack-test]
+
+jobs:
+  localstack-terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Start LocalStack
+        uses: LocalStack/setup-localstack@v0.2.2
+        with:
+          image-tag: "latest"
+          install-awslocal: "true"
+
+      - name: Wait for LocalStack
+        run: |
+          localstack status --wait
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.6.7"
+
+      - name: Install tflocal
+        run: |
+          pip install terraform-local awscli-local
+
+      - name: Run Terraform
+        working-directory: ./terraform
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          tflocal init
+          tflocal apply -auto-approve
