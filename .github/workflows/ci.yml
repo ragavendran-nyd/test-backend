@@ -37,6 +37,14 @@ jobs:
         with:
           terraform_version: "1.8.5"
 
+      - name: Remove BOM from Terraform files
+        run: |
+          find . -name "*.tf" -exec sed -i '1s/^\xEF\xBB\xBF//' {} \;
+
+      - name: Debug provider.tf bytes
+        run: |
+          hexdump -C provider.tf | head
+
       - name: Install tflocal
         run: |
           pip install terraform-local awscli-local
