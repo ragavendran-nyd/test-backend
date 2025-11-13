@@ -62,3 +62,20 @@ jobs:
           tflocal init -no-color
           tflocal plan -no-color
           tflocal apply -auto-approve -no-color
+
+      - name: Check EC2 container inside LocalStack
+        run: |
+          echo "=== LocalStack Containers ==="
+          docker ps
+
+          EC2_CONTAINER=$(docker ps --filter "name=localstack" --filter "name=machine" --format "{{.ID}}" | head -n 1)
+          echo "EC2 container ID: $EC2_CONTAINER"
+
+          echo "=== Containers running INSIDE the EC2 simulation ==="
+          docker exec $EC2_CONTAINER docker ps || true
+
+      - name: Check Keycloak logs
+        run: |
+          EC2_CONTAINER=$(docker ps --filter "name=machine" --format "{{.ID}}" | head -n 1)
+          echo "Reading Keycloak logs inside EC2 container $EC2_CONTAINER"
+          docker exec $EC2_CONTAINER docker logs keycloak || true
