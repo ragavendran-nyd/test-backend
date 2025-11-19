@@ -42,7 +42,7 @@ resource "aws_security_group" "ec2_sg" {
 resource "aws_instance" "app" {
   ami           = data.aws_ami.amazon_linux.id
   instance_type = "t2.micro"
-  key_name      = "cloudwill-key-ec2"
+  key_name      = "cloudwill-key"
 
   security_groups = [aws_security_group.ec2_sg.name]
 
