@@ -1,38 +1,38 @@
-name: Deploy to LocalStack
-
+name: Deploy Infra to AWS
 on:
   push:
-    branches: [willcloud-s3-localstack-test]
+    branches: ["willcloud-statefile-lock"]
   workflow_dispatch:
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    services:
-      localstack:
-        image: localstack/localstack:latest
-        ports:
-          - 4566:4566
-        env:
-          SERVICES: s3
-          DEBUG: 1
-        options: >-
-          --health-cmd "curl -f http://localhost:4566/_localstack/health || exit 1"
-          --health-interval 10s
-          --health-retries 10
-          --health-timeout 5s
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "us-east-1"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.5
 
-      - name: Initialize Terraform
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      - name: Terraform Init (loads backend from S3 + DynamoDB)
         run: terraform init
 
-      - name: Apply Terraform (simulate AWS infra)
-        run: terraform apply -auto-approve
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve tfplan
