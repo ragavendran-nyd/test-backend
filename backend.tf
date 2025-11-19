@@ -3,7 +3,7 @@ terraform {
     bucket         = "willcloud-tf-state-bucket"
     key            = "state/terraform.tfstate"
     region         = "ap-southeast-2"
-    dynamodb_table = "terraform-lock-table"
+    dynamodb_table = "terraform-lock-table-bucket"
     encrypt        = true
   }
 }
