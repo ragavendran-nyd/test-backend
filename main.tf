@@ -30,7 +30,7 @@ resource "aws_security_group" "ec2_sg" {
 }
 
 resource "aws_instance" "app" {
-  ami           = "ami-0c2b8ca1dad447f8a" # Amazon Linux 2 (Sydney)
+  ami           = "ami-0df4b85f347acc09a" # Amazon Linux 2 (Sydney)
   instance_type = "t2.micro"
   key_name      = "cloudwill-key-ec2"
 
