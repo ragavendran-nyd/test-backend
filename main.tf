@@ -12,7 +12,7 @@ terraform {
 resource "aws_security_group" "ec2_sg" {
   name        = "ec2-basic-sg"
   description = "Allow SSH"
-  vpc_id      = "default"
+  vpc_id      = "vpc-057a60bd04b062b86"
 
   ingress {
     from_port   = 22
