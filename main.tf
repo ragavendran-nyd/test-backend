@@ -9,6 +9,16 @@ terraform {
   }
 }
 
+data "aws_ami" "amazon_linux" {
+  owners      = ["amazon"]
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
 resource "aws_security_group" "ec2_sg" {
   name        = "ec2-basic-sg"
   description = "Allow SSH"
@@ -30,7 +40,7 @@ resource "aws_security_group" "ec2_sg" {
 }
 
 resource "aws_instance" "app" {
-  ami           = "ami-0df4b85f347acc09a" # Amazon Linux 2 (Sydney)
+  ami           = data.aws_ami.amazon_linux.id
   instance_type = "t2.micro"
   key_name      = "cloudwill-key-ec2"
 
