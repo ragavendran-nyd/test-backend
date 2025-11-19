@@ -42,12 +42,12 @@ resource "aws_security_group" "ec2_sg" {
 resource "aws_instance" "app" {
   ami           = data.aws_ami.amazon_linux.id
   instance_type = "t2.micro"
-  key_name      = "cloudwill-key"
+  key_name      = "willcloud-key"
 
   security_groups = [aws_security_group.ec2_sg.name]
 
   tags = {
-    Name = "cloudwill-ec2"
+    Name = "willcloud-ec2"
   }
 }
 
