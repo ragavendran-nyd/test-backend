@@ -9,16 +9,38 @@ terraform {
   }
 }
 
-resource "aws_instance" "free_tier" {
-  ami           = "ami-0c2b8ca1dad447f8a"
-  instance_type = "t2.micro"
-  key_name      = "willcloud-key-ec2"
+resource "aws_security_group" "ec2_sg" {
+  name        = "ec2-basic-sg"
+  description = "Allow SSH"
+  vpc_id      = "default"
 
-  tags = {
-    Name = "FreeTierEC2"
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-output "instance_id" {
-  value = aws_instance.free_tier.id
+resource "aws_instance" "app" {
+  ami           = "ami-0c2b8ca1dad447f8a" # Amazon Linux 2 (Sydney)
+  instance_type = "t2.micro"
+  key_name      = "cloudwill-key-ec2"
+
+  security_groups = [aws_security_group.ec2_sg.name]
+
+  tags = {
+    Name = "cloudwill-ec2"
+  }
+}
+
+output "ec2_ip" {
+  value = aws_instance.app.public_ip
 }
