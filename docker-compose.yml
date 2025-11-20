@@ -13,30 +13,47 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:21.1.1
+
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+
       KC_DB: postgres
       KC_DB_URL_HOST: postgres
       KC_DB_URL_DATABASE: keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: keycloakpass
+
       KC_HTTP_ENABLED: "true"
       KC_PROXY: edge
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_SPI_HOSTNAME_DEFAULT_HTTPS_REQUIRED: "false"
+
     volumes:
-      - ./disable-ssl.sh:/opt/keycloak/disable-ssl.sh
+      - /opt/app/disable-ssl.sh:/opt/keycloak/disable-ssl.sh
+
     entrypoint:
       - /bin/bash
       - -c
       - |
+        echo "Starting Keycloak..."
         /opt/keycloak/bin/kc.sh start-dev &
-        sleep 15
+
+        echo "Waiting for Keycloak to be ready..."
+        until curl -sf http://localhost:8080/realms/master > /dev/null; do
+          sleep 5
+        done
+
+        echo "Running disable-ssl script..."
+        chmod +x /opt/keycloak/disable-ssl.sh
         bash /opt/keycloak/disable-ssl.sh
+
         wait
+
     ports:
       - "8080:8080"
+
     depends_on:
       - postgres
 
