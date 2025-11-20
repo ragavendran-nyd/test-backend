@@ -93,6 +93,16 @@ resource "aws_instance" "app" {
     }
   }
 
+  provisioner "file" {
+    source      = "docker-compose.yml"
+    destination = "/home/ec2-user/docker-compose.yml"
+  }
+
+  provisioner "file" {
+    source      = "disable-ssl.sh"
+    destination = "/home/ec2-user/disable-ssl.sh"
+  }
+
   # ---------------------------
   # Run installation script
   # ---------------------------
