@@ -37,15 +37,18 @@ services:
       - /bin/bash
       - -c
       - |
+        echo "Installing curl inside container..."
+        microdnf install -y curl
+
         echo "Starting Keycloak..."
         /opt/keycloak/bin/kc.sh start-dev &
 
-        echo "Waiting for Keycloak to be ready..."
+        echo "Waiting for Keycloak to start..."
         until curl -sf http://localhost:8080/realms/master > /dev/null; do
           sleep 5
         done
 
-        echo "Running disable-ssl script..."
+        echo "Running disable-ssl.sh..."
         chmod +x /opt/keycloak/disable-ssl.sh
         bash /opt/keycloak/disable-ssl.sh
 
