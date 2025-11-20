@@ -23,7 +23,6 @@ docker-compose --version
 # Prepare app directory
 mkdir -p /opt/app
 mv /home/ec2-user/docker-compose.yml /opt/app/docker-compose.yml
-mv /home/ec2-user/disable-ssh.sh /opt/app/disable-ssh.sh
 cd /opt/app
 
 # Start containers
