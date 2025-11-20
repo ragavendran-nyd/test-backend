@@ -14,32 +14,31 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:21.1.1
     environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
       KC_DB: postgres
       KC_DB_URL_HOST: postgres
       KC_DB_URL_DATABASE: keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: keycloakpass
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
       KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_PROXY: edge
+    volumes:
+      - ./disable-ssl.sh:/opt/keycloak/disable-ssl.sh
     entrypoint:
       - /bin/bash
       - -c
       - |
         /opt/keycloak/bin/kc.sh start-dev &
-        sleep 20
+        sleep 15
         bash /opt/keycloak/disable-ssl.sh
         wait
-    volumes:
-      - ./disable-ssl.sh:/opt/keycloak/disable-ssl.sh
     ports:
       - "8080:8080"
     depends_on:
       - postgres
-    restart: unless-stopped
 
 volumes:
   pgdata:

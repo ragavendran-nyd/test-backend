@@ -1,21 +1,20 @@
 #!/bin/bash
-
-# Wait until Keycloak API is available
 echo "Waiting for Keycloak to be ready..."
-until curl -sf http://localhost:8080/realms/master >/dev/null 2>&1; do
+
+until curl -sf http://localhost:8080/realms/master > /dev/null; do
   sleep 5
 done
 
-echo "Keycloak is up. Disabling SSL requirement in master realm..."
+echo "Disabling SSL Requirement in master realm..."
 
-# Login to admin CLI
+# Login to KC Admin CLI
 /opt/keycloak/bin/kcadm.sh config credentials \
   --server http://localhost:8080 \
   --realm master \
   --user admin \
   --password admin
 
-# Disable SSL enforcement
+# Disable SSL enforcement in DB realm config
 /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
 
-echo "SSL requirement disabled successfully."
+echo "SSL disabled successfully."
