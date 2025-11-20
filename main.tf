@@ -94,13 +94,15 @@ resource "aws_instance" "app" {
   }
 
   provisioner "file" {
-    source      = "docker-compose.yml"
-    destination = "/home/ec2-user/docker-compose.yml"
-  }
-
-  provisioner "file" {
     source      = "disable-ssl.sh"
     destination = "/home/ec2-user/disable-ssl.sh"
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = file("willcloud-key.pem")
+      host        = self.public_ip
+    }
   }
 
   # ---------------------------
