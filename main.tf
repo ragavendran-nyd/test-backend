@@ -108,6 +108,7 @@ resource "aws_instance" "app" {
   # ---------------------------
   provisioner "remote-exec" {
     inline = [
+      "chmod +x /home/ec2-user/disable-ssl.sh",
       "chmod +x /home/ec2-user/docker.sh",
       "sudo /home/ec2-user/docker.sh"
     ]
