@@ -22,10 +22,6 @@ resource "local_file" "vault_hcl_file" {
   filename = "${path.module}/vault.hcl" # will be uploaded by provisioner
 }
 
-provider "aws" {
-  region = var.aws_region
-}
-
 data "aws_caller_identity" "current" {}
 
 # -------------------------
