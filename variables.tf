@@ -9,12 +9,15 @@ variable "instance_type" {
 }
 
 variable "vpc_id" {
-  type = string
+  type    = string
+  default = "vpc-057a60bd04b062b86"
 }
 
 variable "key_name" {
-  type = string
+  type    = string
+  default = "willcloud-key"
 }
+
 
 variable "kms_key_alias" {
   type    = string
