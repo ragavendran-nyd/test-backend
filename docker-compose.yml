@@ -52,5 +52,21 @@ services:
     depends_on:
       - postgres
 
+  vault:
+    image: hashicorp/vault:1.17.3
+    container_name: vault
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+    volumes:
+      - vaultdata:/vault/data
+      - /opt/app/vault.hcl:/vault/config/vault.hcl:ro
+    command: server -config=/vault/config/vault.hcl
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  vaultdata:
