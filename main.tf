@@ -248,7 +248,7 @@ resource "aws_instance" "app" {
   }
 
   # user-data runs docker install + compose + keycloak + vault reliably
-  user_data = file("${path.module}/userdata.sh")
+  user_data = file("${path.module}/user-data.sh")
 
   # Upload required application files
   provisioner "file" {
