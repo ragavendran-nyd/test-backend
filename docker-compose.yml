@@ -43,9 +43,6 @@ services:
     healthcheck:
       test:
         ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
-    interval: 10s
-    timeout: 5s
-    retries: 20
 
   keycloak-fix:
     image: quay.io/keycloak/keycloak:21.1.1
