@@ -31,6 +31,7 @@ services:
 
       KC_HTTP_ENABLED: "true"
       KC_PROXY: edge
+      KC_HOSTNAME: keycloak
     ports:
       - "8080:8080"
     volumes:
@@ -41,13 +42,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test:
-        [
-          "CMD-SHELL",
-          "curl -f --silent http://localhost:8080/realms/master || exit 1",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 20
+        ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+    interval: 10s
+    timeout: 5s
+    retries: 20
 
   keycloak-fix:
     image: quay.io/keycloak/keycloak:21.1.1
@@ -59,12 +57,20 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
     entrypoint: ["/bin/bash", "-c"]
     command: |
-      echo "wait for keycloak api...";
-      until curl -sSf http://keycloak:8080/realms/master >/dev/null 2>&1; do sleep 3; done;
-      echo "keycloak reachable; configuring admin...";
-      /opt/keycloak/bin/kcadm.sh config credentials --server http://keycloak:8080 --realm master --user ${KEYCLOAK_ADMIN} --password ${KEYCLOAK_ADMIN_PASSWORD};
-      /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE || true;
-      echo "sslRequired set to NONE (or already set)";
+      echo "Waiting for Keycloak..."
+      until curl -s http://keycloak:8080/realms/master >/dev/null 2>&1; do sleep 3; done
+
+      echo "Login to Keycloak..."
+      /opt/keycloak/bin/kcadm.sh config credentials \
+        --server http://keycloak:8080 \
+        --realm master \
+        --user admin \
+        --password admin
+
+      echo "Disabling SSL requirement..."
+      /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
+
+      echo "SSL disabled successfully."
     restart: "no"
 
   vault:
