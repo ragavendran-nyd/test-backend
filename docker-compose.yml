@@ -58,26 +58,27 @@ services:
     depends_on:
       keycloak:
         condition: service_healthy
-    healthcheck:
-      test:
-        ["CMD-SHELL", "curl -f http://localhost:8080/realms/master || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-    volumes:
-      - ./disable-ssl.sh:/disable-ssl.sh:ro
-    entrypoint: ["/bin/bash", "-c"]
-    command: |
-      "echo 'waiting for keycloak to be healthy...';
-      until curl -sS http://keycloak:8080/realms/master >/dev/null 2>&1; do sleep 5; done;
-      echo 'Keycloak up; running disable steps';
-      /opt/keycloak/bin/kcadm.sh config credentials --server http://keycloak:8080 --realm master --user ${KEYCLOAK_ADMIN} --password ${KEYCLOAK_ADMIN_PASSWORD};
-      /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE || true;
-      echo 'sslRequired set to NONE';
-      exit 0"
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        echo "Waiting for Keycloak..."
+        until curl -s http://keycloak:8080/realms/master >/dev/null; do
+          sleep 5
+        done
+
+        echo "Running disable-ssl..."
+        /opt/keycloak/bin/kcadm.sh config credentials \
+          --server http://keycloak:8080 \
+          --realm master \
+          --user ${KEYCLOAK_ADMIN} \
+          --password ${KEYCLOAK_ADMIN_PASSWORD}
+
+        /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
+        echo "SSL disabled successfully"
     restart: "no"
 
   vault:
