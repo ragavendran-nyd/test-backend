@@ -310,9 +310,10 @@ resource "aws_instance" "app" {
   # run script in background so Terraform doesn't wait endlessly
   provisioner "remote-exec" {
     inline = [
-      "chmod +x /home/ec2-user/docker.sh",
-      "chmod +x /home/ec2-user/vault-init.sh",
-      "sudo nohup /home/ec2-user/docker.sh >/tmp/docker.log 2>&1 &"
+      "sudo chmod +x /home/ec2-user/docker.sh",
+      "sudo chmod +x /home/ec2-user/vault-init.sh",
+      "sudo dos2unix /home/ec2-user/docker.sh || true",
+      "sudo nohup /usr/bin/bash /home/ec2-user/docker.sh > /tmp/docker.log 2>&1 &"
     ]
 
     connection {
@@ -323,7 +324,6 @@ resource "aws_instance" "app" {
     }
   }
 }
-
 output "ec2_ip" {
   value = aws_instance.app.public_ip
 }
