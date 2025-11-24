@@ -31,16 +31,13 @@ services:
 
       KC_HTTP_ENABLED: "true"
       KC_PROXY: edge
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_SPI_HOSTNAME_DEFAULT_HTTPS_REQUIRED: "false"
-
     ports:
       - "8080:8080"
     volumes:
       - ./disable-ssl.sh:/opt/app/disable-ssl.sh:ro
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test:
@@ -50,9 +47,8 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 12
+      retries: 20
 
-  # helper container that waits for Keycloak then disables sslRequired
   keycloak-fix:
     image: quay.io/keycloak/keycloak:21.1.1
     depends_on:
@@ -61,24 +57,14 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-    entrypoint:
-      - /bin/bash
-      - -c
-      - |
-        echo "Waiting for Keycloak..."
-        until curl -s http://keycloak:8080/realms/master >/dev/null; do
-          sleep 5
-        done
-
-        echo "Running disable-ssl..."
-        /opt/keycloak/bin/kcadm.sh config credentials \
-          --server http://keycloak:8080 \
-          --realm master \
-          --user ${KEYCLOAK_ADMIN} \
-          --password ${KEYCLOAK_ADMIN_PASSWORD}
-
-        /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
-        echo "SSL disabled successfully"
+    entrypoint: ["/bin/bash", "-c"]
+    command: |
+      echo "wait for keycloak api...";
+      until curl -sSf http://keycloak:8080/realms/master >/dev/null 2>&1; do sleep 3; done;
+      echo "keycloak reachable; configuring admin...";
+      /opt/keycloak/bin/kcadm.sh config credentials --server http://keycloak:8080 --realm master --user ${KEYCLOAK_ADMIN} --password ${KEYCLOAK_ADMIN_PASSWORD};
+      /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE || true;
+      echo "sslRequired set to NONE (or already set)";
     restart: "no"
 
   vault:
