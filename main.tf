@@ -19,7 +19,9 @@ terraform {
 
 data "aws_caller_identity" "current" {}
 
-# render vault.hcl from template (kms arn injected later via local.kms_key_arn)
+# -------------------------
+# vault.hcl Template
+# -------------------------
 data "template_file" "vault_hcl" {
   template = file("${path.module}/vault.hcl.tpl")
   vars = {
@@ -34,7 +36,7 @@ resource "local_file" "vault_hcl_file" {
 }
 
 # -------------------------
-# AMI
+# AMI (Amazon Linux 2)
 # -------------------------
 data "aws_ami" "amazon_linux" {
   owners      = ["amazon"]
@@ -47,7 +49,7 @@ data "aws_ami" "amazon_linux" {
 }
 
 # -------------------------
-# Security Group: detect existing by name+vpc, else create
+# Security Group
 # -------------------------
 data "aws_security_group" "existing_ec2_sg" {
   count = 1
@@ -59,7 +61,6 @@ data "aws_security_group" "existing_ec2_sg" {
     name   = "vpc-id"
     values = [var.vpc_id]
   }
-  # if not found this will still return empty result; we'll use length checks below
 }
 
 resource "aws_security_group" "ec2_sg" {
@@ -246,22 +247,13 @@ resource "aws_instance" "app" {
     Name = var.instance_name
   }
 
-  # uploads
-  provisioner "file" {
-    source      = "docker.sh"
-    destination = "/home/ec2-user/docker.sh"
+  # user-data runs docker install + compose + keycloak + vault reliably
+  user_data = file("${path.module}/userdata.sh")
 
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = file(var.private_key_path)
-      host        = self.public_ip
-    }
-  }
-
+  # Upload required application files
   provisioner "file" {
-    source      = "disable-ssl.sh"
-    destination = "/home/ec2-user/disable-ssl.sh"
+    source      = "docker-compose.yml"
+    destination = "/home/ec2-user/docker-compose.yml"
 
     connection {
       type        = "ssh"
@@ -296,25 +288,8 @@ resource "aws_instance" "app" {
   }
 
   provisioner "file" {
-    source      = "docker-compose.yml"
-    destination = "/home/ec2-user/docker-compose.yml"
-
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = file(var.private_key_path)
-      host        = self.public_ip
-    }
-  }
-
-  # run script in background so Terraform doesn't wait endlessly
-  provisioner "remote-exec" {
-    inline = [
-      "sudo chmod +x /home/ec2-user/docker.sh",
-      "sudo chmod +x /home/ec2-user/vault-init.sh",
-      "sudo dos2unix /home/ec2-user/docker.sh || true",
-      "sudo nohup /usr/bin/bash /home/ec2-user/docker.sh > /tmp/docker.log 2>&1 &"
-    ]
+    source      = "disable-ssl.sh"
+    destination = "/home/ec2-user/disable-ssl.sh"
 
     connection {
       type        = "ssh"
@@ -324,7 +299,7 @@ resource "aws_instance" "app" {
     }
   }
 }
+
 output "ec2_ip" {
   value = aws_instance.app.public_ip
 }
-
