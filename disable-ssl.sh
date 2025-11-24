@@ -1,18 +1,15 @@
 #!/bin/bash
-echo "Waiting for Keycloak to become ready..."
+set -e
 
-# Try admin login until it succeeds
-until /opt/keycloak/bin/kcadm.sh config credentials \
-  --server http://localhost:8080 \
-  --realm master \
-  --user admin \
-  --password admin > /dev/null 2>&1; do
-    sleep 5
+# expects KEYCLOAK_ADMIN and KEYCLOAK_ADMIN_PASSWORD to be available in environment
+SERVER_URL="http://localhost:8080"
+
+# try login until succeeds
+until /opt/keycloak/bin/kcadm.sh config credentials --server ${SERVER_URL} --realm master --user ${KEYCLOAK_ADMIN} --password ${KEYCLOAK_ADMIN_PASSWORD} >/dev/null 2>&1; do
+  sleep 2
 done
 
-echo "Keycloak is ready. Disabling SSL requirement..."
+# set sslRequired to NONE
+/opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE || true
 
-# Set sslRequired to NONE
-/opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
-
-echo "SSL requirement disabled successfully."
+echo "sslRequired set to NONE"

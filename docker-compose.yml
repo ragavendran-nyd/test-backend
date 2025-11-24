@@ -10,10 +10,15 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   keycloak:
     image: quay.io/keycloak/keycloak:21.1.1
-
+    command: ["start-dev"]
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -30,27 +35,44 @@ services:
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_SPI_HOSTNAME_DEFAULT_HTTPS_REQUIRED: "false"
 
-    volumes:
-      - /opt/app/disable-ssl.sh:/opt/keycloak/disable-ssl.sh
-
-    entrypoint:
-      - /bin/bash
-      - -c
-      - |
-        echo "Starting Keycloak..."
-        /opt/keycloak/bin/kc.sh start-dev &
-
-        echo "Running disable-ssl script..."
-        chmod +x /opt/keycloak/disable-ssl.sh
-        bash /opt/keycloak/disable-ssl.sh
-
-        wait
-
     ports:
       - "8080:8080"
-
+    volumes:
+      - ./disable-ssl.sh:/opt/app/disable-ssl.sh:ro
     depends_on:
       - postgres
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f --silent http://localhost:8080/realms/master || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # helper container that waits for Keycloak then disables sslRequired
+  keycloak-fix:
+    image: quay.io/keycloak/keycloak:21.1.1
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - ./disable-ssl.sh:/disable-ssl.sh:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command: |
+      "echo 'waiting for keycloak to be healthy...';
+      until curl -sS http://keycloak:8080/realms/master >/dev/null 2>&1; do sleep 5; done;
+      echo 'Keycloak up; running disable steps';
+      /opt/keycloak/bin/kcadm.sh config credentials --server http://keycloak:8080 --realm master --user ${KEYCLOAK_ADMIN} --password ${KEYCLOAK_ADMIN_PASSWORD};
+      /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE || true;
+      echo 'sslRequired set to NONE';
+      exit 0"
+    restart: "no"
 
   vault:
     image: hashicorp/vault:1.17.3
@@ -59,14 +81,30 @@ services:
       VAULT_ADDR: "http://0.0.0.0:8200"
     volumes:
       - vaultdata:/vault/data
-      - /opt/app/vault.hcl:/vault/config/vault.hcl:ro
+      - ./vault.hcl:/vault/config/vault.hcl:ro
     command: server -config=/vault/config/vault.hcl
     ports:
       - "8200:8200"
     cap_add:
       - IPC_LOCK
     restart: unless-stopped
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sS http://127.0.0.1:8200/v1/sys/health | grep -q 'initialized' || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
 volumes:
   pgdata:
   vaultdata:
+
+networks:
+  default:
+    driver: bridge
