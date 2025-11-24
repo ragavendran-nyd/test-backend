@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-### Update and install Docker ###
-yum update -y
-amazon-linux-extras install docker -y
+# Install Docker properly on Amazon Linux 2023
+sudo yum update -y
+sudo yum install -y docker
 
-systemctl start docker
-systemctl enable docker
+sudo systemctl enable docker
+sudo systemctl start docker
 
 ### Install Docker Compose v2 ###
 curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
