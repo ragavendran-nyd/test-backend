@@ -1,4 +1,4 @@
-name: EC2 Deploy Using Terraform
+name: EC2 Instance Spin-up with Keycloak, Postgres and Vault
 
 on:
   push:
