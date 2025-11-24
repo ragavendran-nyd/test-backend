@@ -312,7 +312,7 @@ resource "aws_instance" "app" {
     inline = [
       "chmod +x /home/ec2-user/docker.sh",
       "chmod +x /home/ec2-user/vault-init.sh",
-      "nohup sudo /home/ec2-user/docker.sh >/tmp/docker.log 2>&1 & true"
+      "sudo nohup /home/ec2-user/docker.sh >/tmp/docker.log 2>&1 &"
     ]
 
     connection {
