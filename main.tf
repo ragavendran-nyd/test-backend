@@ -260,6 +260,18 @@ resource "aws_instance" "app" {
   }
 
   provisioner "file" {
+    source      = "disable-ssl.sh"
+    destination = "/home/ec2-user/disable-ssl.sh"
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = file(var.private_key_path)
+      host        = self.public_ip
+    }
+  }
+
+  provisioner "file" {
     source      = "vault.hcl"
     destination = "/home/ec2-user/vault.hcl"
 
