@@ -1,20 +1,33 @@
 #!/bin/bash
+set -e
 
-COMPOSE_FILE=$1
-VAULT_FILE=$2
+sudo yum update -y
+sudo yum install -y docker
 
-echo "🚀 Installing Docker Compose"
-sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Install docker-compose v2
+sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+    -o /usr/local/bin/docker-compose
+
 sudo chmod +x /usr/local/bin/docker-compose
+sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-echo "📁 Creating application directory"
+echo "Docker + Compose installed."
+
+# Create app directory
 sudo mkdir -p /opt/app/vault
-sudo cp $VAULT_FILE /opt/app/vault/vault.hcl
 
-echo "📦 Starting containers"
-sudo docker-compose -f $COMPOSE_FILE up -d
+# Move vault config
+sudo mv /home/ec2-user/vault.hcl /opt/app/vault/vault.hcl
 
-echo "⏳ Waiting for services to stabilize..."
-sleep 10
+# Move compose file
+sudo mv /home/ec2-user/docker-compose.yml /opt/app/docker-compose.yml
 
-echo "🔥 DONE — Docker stack deployed"
+cd /opt/app
+
+echo "Starting containers..."
+sudo docker-compose up -d
+
+echo "DONE!"
