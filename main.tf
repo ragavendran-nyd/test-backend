@@ -252,6 +252,18 @@ resource "aws_instance" "app" {
 
   # Upload required application files
   provisioner "file" {
+    source      = "docker.sh"
+    destination = "/home/ec2-user/docker.sh"
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = file(var.private_key_path)
+      host        = self.public_ip
+    }
+  }
+
+  provisioner "file" {
     source      = "docker-compose.yml"
     destination = "/home/ec2-user/docker-compose.yml"
 
