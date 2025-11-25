@@ -1,5 +1,6 @@
 terraform {
   required_version = ">= 1.0.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -8,6 +9,9 @@ terraform {
   }
 }
 
+# ----------------------------------------
+# AMI Lookup
+# ----------------------------------------
 data "aws_ami" "amazon_linux" {
   owners      = ["amazon"]
   most_recent = true
@@ -18,10 +22,29 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
+# ----------------------------------------
+# Check if SG already exists
+# ----------------------------------------
+data "aws_security_group" "existing" {
+  filter {
+    name   = "group-name"
+    values = ["willcloud-ec2-sg"]
+  }
+
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+}
+
+# ----------------------------------------
+# Create SG only if not found
+# ----------------------------------------
 resource "aws_security_group" "willcloud_ec2_sg" {
-  name        = "willcloud-ec2-sg"
-  description = "Allow SSH + Keycloak + Vault"
-  vpc_id      = var.vpc_id
+  count = data.aws_security_group.existing.id != "" ? 0 : 1
+
+  name   = "willcloud-ec2-sg"
+  vpc_id = var.vpc_id
 
   ingress {
     from_port   = 22
@@ -52,14 +75,31 @@ resource "aws_security_group" "willcloud_ec2_sg" {
   }
 }
 
+# ----------------------------------------
+# Pick final SG ID (existing or newly-created)
+# ----------------------------------------
+locals {
+  sg_id = data.aws_security_group.existing.id != "" ?
+    data.aws_security_group.existing.id :
+    aws_security_group.willcloud_ec2_sg[0].id
+}
+
+
+# ----------------------------------------
+# EC2 Instance
+# ----------------------------------------
 resource "aws_instance" "app" {
-  ami                    = data.aws_ami.amazon_linux.id
-  instance_type          = var.instance_type
-  key_name               = var.key_name
-  vpc_security_group_ids = [aws_security_group.willcloud_ec2_sg.id]
+  ami           = data.aws_ami.amazon_linux.id
+  instance_type = var.instance_type
+  key_name      = var.key_name
 
-  tags = { Name = "willcloud-ec2-vault" }
+  vpc_security_group_ids = [local.sg_id]
 
+  tags = {
+    Name = "willcloud-ec2-vault"
+  }
+
+  # ---- Upload docker.sh ----
   provisioner "file" {
     source      = "docker.sh"
     destination = "/home/ec2-user/docker.sh"
@@ -72,6 +112,7 @@ resource "aws_instance" "app" {
     }
   }
 
+  # ---- Upload docker-compose.yml ----
   provisioner "file" {
     source      = "docker-compose.yml"
     destination = "/home/ec2-user/docker-compose.yml"
@@ -84,6 +125,7 @@ resource "aws_instance" "app" {
     }
   }
 
+  # ---- Upload vault.hcl ----
   provisioner "file" {
     source      = "vault.hcl"
     destination = "/home/ec2-user/vault.hcl"
@@ -96,6 +138,7 @@ resource "aws_instance" "app" {
     }
   }
 
+  # ---- Execute docker.sh ----
   provisioner "remote-exec" {
     inline = [
       "chmod +x /home/ec2-user/docker.sh",
@@ -111,6 +154,9 @@ resource "aws_instance" "app" {
   }
 }
 
+# ----------------------------------------
+# Output
+# ----------------------------------------
 output "ec2_ip" {
   value = aws_instance.app.public_ip
 }
