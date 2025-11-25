@@ -62,7 +62,8 @@ services:
           "ui": true
         }
     volumes:
-      - vaultdata:/vault
+      - /opt/vault/vault.hcl:/vault/vault.hcl
+      - /opt/vault/data:/vault/data
     command: server -config=/vault/vault.hcl
 
 volumes:

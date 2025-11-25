@@ -11,23 +11,23 @@ sudo systemctl start docker
 sudo systemctl enable docker
 
 # Install docker-compose v2 binary
-curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose || true
+sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose || true
 
 # Prepare app folder
 sudo mkdir -p /opt/app
 sudo chown ec2-user:ec2-user /opt/app
 
 # Move compose and vault.hcl
-mv "$COMPOSE_SRC" /opt/app/docker-compose.yml
-mv "$VAULT_HCL_SRC" /opt/app/vault.hcl
-chmod 644 /opt/app/vault.hcl
+mkdir -p /opt/vault/data
+sudo mv /home/ec2-user/vault.hcl /opt/vault/vault.hcl
+sudo mv /home/ec2-user/docker-compose.yml /opt/app/docker-compose.yml
+sudo chmod 644 /opt/app/vault.hcl
 
 cd /opt/app
-
-# Start compose (will create named volume)
-/usr/bin/docker-compose up -d
+docker compose down || true
+docker compose up -d
 
 # Wait for vault container to exist
 sleep 3
