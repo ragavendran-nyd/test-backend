@@ -1,25 +1,16 @@
 version: "3.8"
-
 services:
   postgres:
     image: postgres:15
     environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: keycloak
-      POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: keycloakpass
-
-      # Create keycloak user and grant rights
-      KEYCLOAK_DB_USER: keycloak
-      KEYCLOAK_DB_PASSWORD: keycloakpass
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init-keycloak.sql:/docker-entrypoint-initdb.d/init-keycloak.sql
-    restart: unless-stopped
+      - ./init-keycloak.sql:/docker-entrypoint-initdb.d/init-keycloak.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   keycloak:
     image: quay.io/keycloak/keycloak:21.1.1
@@ -27,29 +18,23 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-
+      KC_HOSTNAME: keycloak
+      KC_PROXY: edge
+      KC_HTTP_ENABLED: "true"
       KC_DB: postgres
       KC_DB_URL_HOST: postgres
       KC_DB_URL_DATABASE: keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: keycloakpass
-
-      KC_HTTP_ENABLED: "true"
-      KC_PROXY: edge
-      KC_HOSTNAME: keycloak
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./disable-ssl.sh:/opt/app/disable-ssl.sh:ro
+    ports: ["8080:8080"]
     depends_on:
       postgres:
         condition: service_healthy
-    restart: unless-stopped
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "for i in {1..10}; do http --check-status GET http://localhost:8080/health/ready > /dev/null 2>&1 && exit 0 || sleep 5; done; exit 1",
+          "for i in {1..20}; do http --check-status GET http://localhost:8080/health/ready > /dev/null 2>&1 && exit 0 || sleep 5; done; exit 1",
         ]
 
   keycloak-fix:
@@ -62,53 +47,20 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
     entrypoint: ["/bin/bash", "-c"]
     command: |
-      echo "Waiting for Keycloak..."
-      until curl -s http://keycloak:8080/realms/master >/dev/null 2>&1; do sleep 3; done
-
-      echo "Login to Keycloak..."
-      /opt/keycloak/bin/kcadm.sh config credentials \
-        --server http://keycloak:8080 \
-        --realm master \
-        --user admin \
-        --password admin
-
-      echo "Disabling SSL requirement..."
-      /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
-
-      echo "SSL disabled successfully."
+      until http --check-status GET http://keycloak:8080/health/ready >/dev/null 2>&1; do sleep 3; done;
+      /opt/keycloak/bin/kcadm.sh config credentials --server http://keycloak:8080 --realm master --user ${KEYCLOAK_ADMIN} --password ${KEYCLOAK_ADMIN_PASSWORD}
+      /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE || true
     restart: "no"
 
   vault:
     image: hashicorp/vault:1.17.3
-    container_name: vault
-    environment:
-      VAULT_ADDR: "http://0.0.0.0:8200"
-    volumes:
-      - vaultdata:/vault/data
-      - ./vault.hcl:/vault/config/vault.hcl:ro
-    command: server -config=/vault/config/vault.hcl
-    ports:
-      - "8200:8200"
-    cap_add:
-      - IPC_LOCK
-    restart: unless-stopped
+    environment: { VAULT_ADDR: "http://0.0.0.0:8200" }
+    volumes: [vaultdata:/vault/data, ./vault.hcl:/vault/config/vault.hcl:ro]
+    ports: ["8200:8200"]
     depends_on:
       keycloak:
         condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -sS http://127.0.0.1:8200/v1/sys/health | grep -q 'initialized' || exit 1",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 12
 
 volumes:
   pgdata:
   vaultdata:
-
-networks:
-  default:
-    driver: bridge
