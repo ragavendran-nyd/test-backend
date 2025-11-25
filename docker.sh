@@ -20,10 +20,14 @@ sudo mkdir -p /opt/app
 sudo chown ec2-user:ec2-user /opt/app
 
 # Move compose and vault.hcl
+sudo mv "$COMPOSE_SRC" /opt/app/docker-compose.yml
+sudo mv "$VAULT_HCL_SRC" /opt/app/vault.hcl
+sudo chmod 644 /opt/app/vault.hcl
+
+
 mkdir -p /opt/vault/data
 sudo mv /home/ec2-user/vault.hcl /opt/vault/vault.hcl
 sudo mv /home/ec2-user/docker-compose.yml /opt/app/docker-compose.yml
-sudo chmod 644 /opt/app/vault.hcl
 
 cd /opt/app
 docker compose down || true
