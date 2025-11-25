@@ -31,7 +31,7 @@ services:
       [
         "/bin/bash",
         "-c",
-        "/opt/keycloak/bin/kc.sh start-dev & chmod +x /opt/keycloak/disable-ssl.sh && /opt/keycloak/disable-ssl.sh; wait",
+        "/opt/keycloak/bin/kc.sh start-dev & chmod +x /opt/keycloak/disable-ssl.sh && bash /opt/keycloak/disable-ssl.sh; wait",
       ]
     ports:
       - "8080:8080"

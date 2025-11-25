@@ -139,8 +139,22 @@ resource "aws_instance" "app" {
     }
   }
 
+  provisioner "file" {
+    source      = "disable-ssl.sh"
+    destination = "/home/ec2-user/disable-ssl.sh"
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = file(var.private_key_path)
+      host        = self.public_ip
+    }
+  }
+
+
   provisioner "remote-exec" {
     inline = [
+      "chmod +x /home/ec2-user/disable-ssl.sh",
       "sudo chmod +x /home/ec2-user/docker.sh",
       "sudo /home/ec2-user/docker.sh",
       "sudo chown -R ec2-user:ec2-user /opt/app"

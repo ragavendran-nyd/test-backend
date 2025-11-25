@@ -25,6 +25,10 @@ sudo mv /home/ec2-user/vault.hcl /opt/app/vault/vault.hcl
 # Move compose file
 sudo mv /home/ec2-user/docker-compose.yml /opt/app/docker-compose.yml
 
+sudo mv /home/ec2-user/disable-ssl.sh /opt/app/disable-ssl.sh
+
+sudo chmod +x /opt/app/disable-ssl.sh
+
 cd /opt/app
 
 echo "Starting containers..."
