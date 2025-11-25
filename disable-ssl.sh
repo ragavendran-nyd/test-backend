@@ -1,9 +1,18 @@
-#!/usr/bin/env bash
-set -e
-# intended to run inside a Keycloak image (or be executed from keycloak-fix)
-SERVER="http://keycloak:8080"
-echo "waiting for Keycloak admin endpoint..."
-until curl -sSf "${SERVER}/realms/master" >/dev/null 2>&1; do sleep 2; done
-/opt/keycloak/bin/kcadm.sh config credentials --server "${SERVER}" --realm master --user "${KEYCLOAK_ADMIN:-admin}" --password "${KEYCLOAK_ADMIN_PASSWORD:-admin}"
-/opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE || true
-echo "sslRequired disabled"
+#!/bin/bash
+echo "Waiting for Keycloak to become ready..."
+
+# Try admin login until it succeeds
+until /opt/keycloak/bin/kcadm.sh config credentials \
+  --server http://localhost:8080 \
+  --realm master \
+  --user admin \
+  --password admin > /dev/null 2>&1; do
+    sleep 5
+done
+
+echo "Keycloak is ready. Disabling SSL requirement..."
+
+# Set sslRequired to NONE
+/opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
+
+echo "SSL requirement disabled successfully."

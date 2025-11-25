@@ -4,72 +4,53 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloakpass
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init-keycloak.sql:/docker-entrypoint-initdb.d/init-keycloak.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
+    restart: unless-stopped
 
   keycloak:
     image: quay.io/keycloak/keycloak:21.1.1
-    command: ["start-dev"]
+
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_HOSTNAME: keycloak
-      KC_PROXY: edge
-      KC_HTTP_ENABLED: "true"
+
       KC_DB: postgres
       KC_DB_URL_HOST: postgres
       KC_DB_URL_DATABASE: keycloak
-      KC_DB_USERNAME: postgres
-      KC_DB_PASSWORD: postgres
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloakpass
 
-    ports: ["8080:8080"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "for i in {1..20}; do http --check-status GET http://localhost:8080/health/ready > /dev/null 2>&1 && exit 0 || sleep 5; done; exit 1",
-        ]
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_SPI_HOSTNAME_DEFAULT_HTTPS_REQUIRED: "false"
 
-  keycloak-fix:
-    image: quay.io/keycloak/keycloak:21.1.1
-    depends_on:
-      keycloak:
-        condition: service_healthy
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-    entrypoint: ["/bin/bash", "-c"]
-    command: |
-      until http --check-status GET http://keycloak:8080/health/ready >/dev/null 2>&1; do sleep 3; done;
-      /opt/keycloak/bin/kcadm.sh config credentials --server http://keycloak:8080 --realm master --user ${KEYCLOAK_ADMIN} --password ${KEYCLOAK_ADMIN_PASSWORD}
-      /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE || true
-
-  vault:
-    image: hashicorp/vault:1.17.3
-    environment:
-      VAULT_ADDR: "http://0.0.0.0:8200"
     volumes:
-      - vaultdata:/vault/data
-      - ./vault.hcl:/vault/config/vault.hcl:ro
+      - /opt/app/disable-ssl.sh:/opt/keycloak/disable-ssl.sh
+
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        echo "Starting Keycloak..."
+        /opt/keycloak/bin/kc.sh start-dev &
+
+        echo "Running disable-ssl script..."
+        chmod +x /opt/keycloak/disable-ssl.sh
+        bash /opt/keycloak/disable-ssl.sh
+
+        wait
+
     ports:
-      - "8200:8200"
+      - "8080:8080"
+
     depends_on:
-      keycloak:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8200/v1/sys/health"]
-      interval: 10s
-      retries: 20
+      - postgres
 
 volumes:
   pgdata:
-  vaultdata:
