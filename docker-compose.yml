@@ -1,4 +1,5 @@
 version: "3.8"
+
 services:
   postgres:
     image: postgres:15
@@ -24,8 +25,9 @@ services:
       KC_DB: postgres
       KC_DB_URL_HOST: postgres
       KC_DB_URL_DATABASE: keycloak
-      KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloakpass
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+
     ports: ["8080:8080"]
     depends_on:
       postgres:
@@ -50,16 +52,23 @@ services:
       until http --check-status GET http://keycloak:8080/health/ready >/dev/null 2>&1; do sleep 3; done;
       /opt/keycloak/bin/kcadm.sh config credentials --server http://keycloak:8080 --realm master --user ${KEYCLOAK_ADMIN} --password ${KEYCLOAK_ADMIN_PASSWORD}
       /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE || true
-    restart: "no"
 
   vault:
     image: hashicorp/vault:1.17.3
-    environment: { VAULT_ADDR: "http://0.0.0.0:8200" }
-    volumes: [vaultdata:/vault/data, ./vault.hcl:/vault/config/vault.hcl:ro]
-    ports: ["8200:8200"]
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+    volumes:
+      - vaultdata:/vault/data
+      - ./vault.hcl:/vault/config/vault.hcl:ro
+    ports:
+      - "8200:8200"
     depends_on:
       keycloak:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8200/v1/sys/health"]
+      interval: 10s
+      retries: 20
 
 volumes:
   pgdata:

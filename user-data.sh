@@ -35,7 +35,13 @@ echo "### Starting docker-compose ###"
 docker-compose pull
 docker-compose up -d
 
-echo "### Running Vault init ###"
+echo "### Waiting for Vault to become healthy ###"
+until [ "$(docker inspect -f {{.State.Health.Status}} vault)" = "healthy" ]; do
+    echo "Vault not healthy yet... waiting"
+    sleep 3
+done
+
+echo "### Running Vault init (safe) ###"
 ./vault-init.sh || true
 
 echo "### DONE ###"
