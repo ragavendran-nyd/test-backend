@@ -1,3 +1,4 @@
+version: "3.8"
 services:
   postgres:
     image: postgres:15
@@ -14,40 +15,29 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-
       KC_DB: postgres
       KC_DB_URL_HOST: postgres
       KC_DB_URL_DATABASE: keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: keycloakpass
-
       KC_HTTP_ENABLED: "true"
       KC_PROXY: edge
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_SPI_HOSTNAME_DEFAULT_HTTPS_REQUIRED: "false"
-
     volumes:
       - /opt/app/disable-ssl.sh:/opt/keycloak/disable-ssl.sh
-
     entrypoint:
-      - /bin/bash
-      - -c
-      - |
-        echo "Starting Keycloak..."
-        /opt/keycloak/bin/kc.sh start-dev &
-
-        echo "Running disable-ssl script..."
-        chmod +x /opt/keycloak/disable-ssl.sh
-        bash /opt/keycloak/disable-ssl.sh
-
-        wait
-
+      [
+        "/bin/bash",
+        "-c",
+        "/opt/keycloak/bin/kc.sh start-dev & chmod +x /opt/keycloak/disable-ssl.sh && /opt/keycloak/disable-ssl.sh; wait",
+      ]
     ports:
       - "8080:8080"
-
     depends_on:
       - postgres
+    restart: unless-stopped
 
   vault:
     image: hashicorp/vault:1.16
@@ -56,15 +46,11 @@ services:
       - "8200:8200"
     cap_add:
       - IPC_LOCK
-    environment:
-      VAULT_LOCAL_CONFIG: |
-        {
-          "ui": true
-        }
     volumes:
-      - /opt/vault/vault.hcl:/vault/vault.hcl
-      - /opt/vault/data:/vault/data
+      - vaultdata:/vault
+      - /opt/app/vault/vault.hcl:/vault/vault.hcl
     command: server -config=/vault/vault.hcl
+    restart: unless-stopped
 
 volumes:
   pgdata:

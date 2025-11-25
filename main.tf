@@ -142,7 +142,8 @@ resource "aws_instance" "app" {
   provisioner "remote-exec" {
     inline = [
       "sudo chmod +x /home/ec2-user/docker.sh",
-      "sudo /home/ec2-user/docker.sh"
+      "sudo /home/ec2-user/docker.sh",
+      "sudo chown -R ec2-user:ec2-user /opt/app"
     ]
 
     connection {
