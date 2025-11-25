@@ -139,11 +139,22 @@ resource "aws_instance" "app" {
     }
   }
 
-  # Execute script
+  # -----------------------
+  # Start Docker Services
+  # -----------------------
   provisioner "remote-exec" {
     inline = [
+      "sudo yum update -y",
+      "sudo yum install -y docker",
+      "sudo service docker start",
+      "sudo usermod -aG docker ec2-user",
+
+      "sudo mkdir -p /opt/app/vault",
+      "sudo mv /home/ec2-user/vault.hcl /opt/app/vault/vault.hcl",
+      "sudo chown -R ec2-user:ec2-user /opt/app",
+
       "chmod +x /home/ec2-user/docker.sh",
-      "sudo /home/ec2-user/docker.sh /home/ec2-user/docker-compose.yml /home/ec2-user/vault.hcl"
+      "sudo /home/ec2-user/docker.sh /home/ec2-user/docker-compose.yml /opt/app/vault/vault.hcl"
     ]
 
     connection {
