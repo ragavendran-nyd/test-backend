@@ -79,9 +79,11 @@ resource "aws_security_group" "willcloud_ec2_sg" {
 # Pick final SG ID (existing or newly-created)
 # ----------------------------------------
 locals {
-  sg_id = data.aws_security_group.existing.id != "" ?
+  sg_id = (
+    data.aws_security_group.existing.id != "" ?
     data.aws_security_group.existing.id :
     aws_security_group.willcloud_ec2_sg[0].id
+  )
 }
 
 
