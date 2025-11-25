@@ -7,11 +7,16 @@ services:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: keycloakpass
+
+      # Create keycloak user and grant rights
+      KEYCLOAK_DB_USER: keycloak
+      KEYCLOAK_DB_PASSWORD: keycloakpass
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./init-keycloak.sql:/docker-entrypoint-initdb.d/init-keycloak.sql
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U keycloak || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,7 +47,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test:
-        ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+        [
+          "CMD-SHELL",
+          "for i in {1..10}; do http --check-status GET http://localhost:8080/health/ready > /dev/null 2>&1 && exit 0 || sleep 5; done; exit 1",
+        ]
 
   keycloak-fix:
     image: quay.io/keycloak/keycloak:21.1.1
