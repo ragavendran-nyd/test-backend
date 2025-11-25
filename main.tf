@@ -8,10 +8,6 @@ terraform {
   }
 }
 
-provider "aws" {
-  region = var.aws_region
-}
-
 data "aws_ami" "amazon_linux" {
   owners      = ["amazon"]
   most_recent = true
@@ -62,7 +58,7 @@ resource "aws_instance" "app" {
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.willcloud_ec2_sg.id]
 
-  tags = { Name = "willcloud-ec2" }
+  tags = { Name = "willcloud-ec2-vault" }
 
   provisioner "file" {
     source      = "docker.sh"
