@@ -23,7 +23,7 @@ data "aws_ami" "amazon_linux" {
 }
 
 # ----------------------------------------
-# Check if SG already exists
+# Detect existing SG
 # ----------------------------------------
 data "aws_security_group" "existing" {
   filter {
@@ -38,7 +38,7 @@ data "aws_security_group" "existing" {
 }
 
 # ----------------------------------------
-# Create SG only if not found
+# Create SG only if not already present
 # ----------------------------------------
 resource "aws_security_group" "willcloud_ec2_sg" {
   count = data.aws_security_group.existing.id != "" ? 0 : 1
@@ -76,7 +76,7 @@ resource "aws_security_group" "willcloud_ec2_sg" {
 }
 
 # ----------------------------------------
-# Pick final SG ID (existing or newly-created)
+# Correct Working Locals Block
 # ----------------------------------------
 locals {
   sg_id = (
@@ -86,9 +86,8 @@ locals {
   )
 }
 
-
 # ----------------------------------------
-# EC2 Instance
+# EC2 instance
 # ----------------------------------------
 resource "aws_instance" "app" {
   ami           = data.aws_ami.amazon_linux.id
@@ -101,7 +100,7 @@ resource "aws_instance" "app" {
     Name = "willcloud-ec2-vault"
   }
 
-  # ---- Upload docker.sh ----
+  # Upload docker.sh
   provisioner "file" {
     source      = "docker.sh"
     destination = "/home/ec2-user/docker.sh"
@@ -114,7 +113,7 @@ resource "aws_instance" "app" {
     }
   }
 
-  # ---- Upload docker-compose.yml ----
+  # Upload docker-compose.yml
   provisioner "file" {
     source      = "docker-compose.yml"
     destination = "/home/ec2-user/docker-compose.yml"
@@ -127,7 +126,7 @@ resource "aws_instance" "app" {
     }
   }
 
-  # ---- Upload vault.hcl ----
+  # Upload vault.hcl
   provisioner "file" {
     source      = "vault.hcl"
     destination = "/home/ec2-user/vault.hcl"
@@ -140,7 +139,7 @@ resource "aws_instance" "app" {
     }
   }
 
-  # ---- Execute docker.sh ----
+  # Execute script
   provisioner "remote-exec" {
     inline = [
       "chmod +x /home/ec2-user/docker.sh",
@@ -156,9 +155,6 @@ resource "aws_instance" "app" {
   }
 }
 
-# ----------------------------------------
-# Output
-# ----------------------------------------
 output "ec2_ip" {
   value = aws_instance.app.public_ip
 }
