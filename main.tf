@@ -131,8 +131,15 @@ resource "aws_cognito_user_pool_client" "client" {
   user_pool_id    = aws_cognito_user_pool.main.id
   generate_secret = false
 
-  callback_urls = ["https://mock.example.com/callback"]
-  logout_urls   = ["https://mock.example.com/logout"]
+  callback_urls = [
+    "http://localhost:3000/callback",
+    "https://example.com"
+  ]
+
+  logout_urls = [
+    "http://localhost:3000/callback",
+    "https://example.com/logout"
+  ]
 }
 
 resource "aws_cognito_user_pool_domain" "domain" {
