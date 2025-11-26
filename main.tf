@@ -35,35 +35,21 @@ data "aws_security_group" "existing_sg" {
     name   = "vpc-id"
     values = ["vpc-057a60bd04b062b86"]
   }
-
 }
 
 # ------------------------------
-# Create SG only if NOT exists
+# Create SG if not exists
 # ------------------------------
 resource "aws_security_group" "ec2_sg" {
   count       = data.aws_security_group.existing_sg.id != "" ? 0 : 1
   name        = "willcloud-ec2-sg"
-  description = "Allow SSH + Keycloak"
+  description = "Allow SSH only"
   vpc_id      = "vpc-057a60bd04b062b86"
 
   ingress {
+    description = "SSH"
     from_port   = 22
     to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 8443
-    to_port     = 8443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -76,7 +62,6 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
-# Choose existing SG or newly created
 locals {
   final_sg_id = (
     data.aws_security_group.existing_sg.id != "" ?
@@ -86,7 +71,7 @@ locals {
 }
 
 # ------------------------------
-# EC2 instance
+# EC2 instance (clean)
 # ------------------------------
 resource "aws_instance" "app" {
   ami           = data.aws_ami.amazon_linux.id
@@ -99,7 +84,6 @@ resource "aws_instance" "app" {
     Name = "willcloud-ec2"
   }
 
-  # Upload files
   provisioner "file" {
     source      = "docker.sh"
     destination = "/home/ec2-user/docker.sh"
@@ -112,34 +96,8 @@ resource "aws_instance" "app" {
     }
   }
 
-  provisioner "file" {
-    source      = "docker-compose.yml"
-    destination = "/home/ec2-user/docker-compose.yml"
-
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = file("willcloud-key.pem")
-      host        = self.public_ip
-    }
-  }
-
-  provisioner "file" {
-    source      = "disable-ssl.sh"
-    destination = "/home/ec2-user/disable-ssl.sh"
-
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = file("willcloud-key.pem")
-      host        = self.public_ip
-    }
-  }
-
-  # Run installation script
   provisioner "remote-exec" {
     inline = [
-      "chmod +x /home/ec2-user/disable-ssl.sh",
       "chmod +x /home/ec2-user/docker.sh",
       "sudo /home/ec2-user/docker.sh"
     ]
@@ -155,4 +113,29 @@ resource "aws_instance" "app" {
 
 output "ec2_ip" {
   value = aws_instance.app.public_ip
+}
+
+# ------------------------------
+# AWS Cognito (new)
+# ------------------------------
+
+resource "aws_cognito_user_pool" "main" {
+  name = "willcloud-user-pool"
+
+  username_attributes      = ["email"]
+  auto_verified_attributes = ["email"]
+}
+
+resource "aws_cognito_user_pool_client" "client" {
+  name            = "willcloud-client"
+  user_pool_id    = aws_cognito_user_pool.main.id
+  generate_secret = false
+
+  callback_urls = ["https://mock.example.com/callback"]
+  logout_urls   = ["https://mock.example.com/logout"]
+}
+
+resource "aws_cognito_user_pool_domain" "domain" {
+  domain       = "willcloud-auth-cognito"
+  user_pool_id = aws_cognito_user_pool.main.id
 }

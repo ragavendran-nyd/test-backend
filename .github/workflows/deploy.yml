@@ -2,7 +2,7 @@ name: EC2 Instance Spin Up With Keycloak and Postgres
 
 on:
   push:
-    branches: ["willcloud-ec2-keycloak"]
+    branches: ["willcloud-ec2-cognito"]
   workflow_dispatch:
 
 jobs:
