@@ -136,6 +136,6 @@ resource "aws_cognito_user_pool_client" "client" {
 }
 
 resource "aws_cognito_user_pool_domain" "domain" {
-  domain       = "willcloud-auth-cognito"
+  domain       = "willcloud-auth"
   user_pool_id = aws_cognito_user_pool.main.id
 }
