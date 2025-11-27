@@ -146,3 +146,10 @@ resource "aws_cognito_user_pool_domain" "domain" {
   domain       = "willcloud-auth"
   user_pool_id = aws_cognito_user_pool.main.id
 }
+
+# Allocate a static Elastic IP and attach to the EC2 instance
+resource "aws_eip" "static_ip" {
+  instance = aws_instance.app_instance.id
+  domain   = "vpc"
+}
+

@@ -1,4 +1,4 @@
-name: EC2 Instance Spin Up With Keycloak and Postgres
+name: EC2 Instance Spin Up With AWS Cognito
 
 on:
   push:
