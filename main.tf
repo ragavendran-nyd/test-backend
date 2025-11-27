@@ -149,7 +149,7 @@ resource "aws_cognito_user_pool_domain" "domain" {
 
 # Allocate a static Elastic IP and attach to the EC2 instance
 resource "aws_eip" "static_ip" {
-  instance = aws_instance.app_instance.id
+  instance = aws_instance.app.id
   domain   = "vpc"
 }
 
