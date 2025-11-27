@@ -75,7 +75,7 @@ locals {
 # ------------------------------
 resource "aws_instance" "app" {
   ami           = data.aws_ami.amazon_linux.id
-  instance_type = "t3.small"
+  instance_type = "t3.medium"
   key_name      = "willcloud-key"
   user_data     = file("${path.module}/vault-install.sh")
 
@@ -87,7 +87,7 @@ resource "aws_instance" "app" {
   vpc_security_group_ids = [local.final_sg_id]
 
   tags = {
-    Name = "willcloud-ec2"
+    Name = "willcloud-ec2-vault"
   }
 
   provisioner "file" {
