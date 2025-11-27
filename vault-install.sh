@@ -2,14 +2,14 @@
 set -e
 
 # Install Vault
-yum install -y yum-utils
-yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
-yum install -y vault
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+sudo yum install -y vault
 
 # Create config directory
 mkdir -p /etc/vault
 mkdir -p /opt/vault/data
-chown -R vault:vault /opt/vault
+sudo chown -R vault:vault /opt/vault
 
 # Vault config
 cat <<EOF >/etc/vault/config.hcl
@@ -24,5 +24,5 @@ storage "file" {
 EOF
 
 # Enable Vault as service
-systemctl enable vault
-systemctl start vault
+sudo systemctl enable vault
+sudo systemctl start vault
