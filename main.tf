@@ -78,6 +78,11 @@ resource "aws_instance" "app" {
   instance_type = "t3.small"
   key_name      = "willcloud-key"
 
+  # Persist root volume
+  root_block_device {
+    delete_on_termination = false
+  }
+
   vpc_security_group_ids = [local.final_sg_id]
 
   tags = {
