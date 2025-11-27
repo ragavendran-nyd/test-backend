@@ -2,7 +2,7 @@ name: EC2 Instance Spin Up With AWS Cognito
 
 on:
   push:
-    branches: ["willcloud-ec2-cognito"]
+    branches: ["willcloud-ec2-cognito-vault"]
   workflow_dispatch:
 
 jobs:
